@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bus Seat Booking System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <div class="container">
+        <h1>🚌 Bus Seat Booking System</h1>
+
+        <!-- Pricing Info -->
+        <div class="price-info">
+            <span>👦 Child: Rs.40</span>
+            <span>🧑 Adult: Rs.80</span>
+            <span>👴 Senior Citizen: Rs.68</span>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <span class="available-box"></span> Available
+            <span class="booked-box"></span> Booked
+        </div>
+
+        <!-- Bus Layout -->
+        <div class="bus">
+            <div class="steering">🚌 Driver</div>
+            {% for row in range(1, 10) %}
+            <div class="row">
+                {% for col in ['A', 'B', 'C', 'D'] %}
+                    {% if col == 'C' %}
+                        <div class="aisle"></div>
+                    {% endif %}
+                    {% set seat_id = row|string + col %}
+                    <div class="seat {{ seats[seat_id] }}"
+                         data-seat="{{ seat_id }}"
+                         onclick="selectSeat('{{ seat_id }}', '{{ seats[seat_id] }}')">
+                        {% if seats[seat_id] == "available" %}
+                            {{ seat_id }}
+                        {% else %}
+                            ✕
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Booking Form -->
+        <div class="form">
+            <h3>Selected Seat: <span id="selected-seat">None</span></h3>
+
+            <label>Passenger Type:</label>
+            <select id="passenger-type">
+                <option value="adult">Adult - Rs.80</option>
+                <option value="child">Child - Rs.40</option>
+                <option value="senior">Senior Citizen - Rs.68</option>
+            </select>
+
+            <div class="buttons">
+                <button onclick="bookSeat()">✅ Book Seat</button>
+                <button onclick="cancelSeat()" class="cancel-btn">❌ Cancel Seat</button>
+            </div>
+
+            <p id="message"></p>
+        </div>
+    </div>
+
+    <script>
+        let selectedSeat = null;
+
+        function selectSeat(seatId, status) {
+            selectedSeat = seatId;
+            document.getElementById("selected-seat").textContent = seatId;
+            document.getElementById("message").textContent = "";
+        }
+
+        function bookSeat() {
+            if (!selectedSeat) {
+                document.getElementById("message").textContent = "⚠️ Please select a seat first!";
+                return;
+            }
+            const type = document.getElementById("passenger-type").value;
+            fetch("/book", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ seat: selectedSeat, type: type })
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("message").textContent = data.message;
+                if (data.success) location.reload();
+            });
+        }
+
+        function cancelSeat() {
+            if (!selectedSeat) {
+                document.getElementById("message").textContent = "⚠️ Please select a seat first!";
+                return;
+            }
+            fetch("/cancel", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ seat: selectedSeat })
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("message").textContent = data.message;
+                if (data.success) location.reload();
+            });
+        }
+    </script>
+
+</body>
+</html>
